@@ -139,10 +139,22 @@ function showResult(title,score,why,tip,labels){
  r.classList.add("show");r.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 function matchWine(){
- const w=wines[document.getElementById("wine").value];
+ const wineName=document.getElementById("wine").value;
+ const w=wines[wineName];
  const selected=[...document.querySelectorAll(".chip.selected")].map(x=>x.textContent);
- let score=selected.length?Math.min(98,82+selected.filter(x=>w.foods.includes(x)).length*6):91;
- showResult(document.getElementById("wine").value,score,w.why,w.tip,[["Syre",w.acid],["Fylde",w.body],["Aromatik",w.aroma]]);
+ const matches=selected.length ? selected.filter(x=>w.foods.includes(x)) : w.foods.slice(0,5);
+ const score=selected.length ? (matches.length ? Math.min(99,78+matches.length*7) : 58) : 94;
+ const heading=selected.length
+   ? (matches.length ? "Det passer godt til " + wineName : "Et mindre oplagt match til " + wineName)
+   : "Mad der passer til " + wineName;
+ const explanation=selected.length
+   ? (matches.length
+      ? "Godt valg! " + wineName + " passer godt til " + matches.join(", ").toLowerCase() + ". " + w.why
+      : "Det valgte match er ikke blandt de mest oplagte til denne vintype. " + w.why)
+   : w.why;
+ showResult(heading,score,explanation,w.tip,[["Syre",w.acid],["Fylde",w.body],["Aromatik",w.aroma]]);
+ const r=document.getElementById("result");
+ r.innerHTML += `<div class="picks">${matches.slice(0,5).map((food,i)=>`<div class="pick"><div class="kicker">${i===0?"Bedste match":"Også godt"}</div><b>${food}</b><div class="mini">${i===0?"Særligt oplagt til denne vin":"Et godt alternativ"}</div></div>`).join("")}</div>`;
 }
 function chooseFood(el){
   document.querySelectorAll("#foodChips .chip").forEach(x=>x.classList.remove("selected"));
