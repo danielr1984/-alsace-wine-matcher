@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alsace Wine Matcher</title>
+<style>
+:root{
+  --bg:#f7f3ec; --card:#fffdf9; --ink:#24221f; --muted:#746f67;
+  --wine:#72243b; --wine2:#9c3e59; --gold:#c59a55; --line:#e7dfd2;
+  --green:#526b58; --shadow:0 18px 50px rgba(52,39,25,.10);
+}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 85% 0%,#efe4d2 0,transparent 32%),var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:1080px;margin:auto;padding:34px 20px 60px}
+header{text-align:center;padding:22px 0 30px}
+.eyebrow{text-transform:uppercase;letter-spacing:.18em;color:var(--wine);font-size:11px;font-weight:700}
+h1{font-family:Georgia,serif;font-size:clamp(38px,7vw,68px);line-height:.95;margin:10px 0 12px;font-weight:500}
+.subtitle{color:var(--muted);max-width:620px;margin:auto;font-size:17px}
+.mode-toggle{display:flex;justify-content:center;margin:24px auto 28px}
+.toggle-track{position:relative;display:grid;grid-template-columns:1fr 1fr;width:min(560px,100%);padding:5px;background:#ddd3c5;border:1px solid #d0c4b4;border-radius:18px;box-shadow:inset 0 1px 2px #00000008}
+.toggle-thumb{position:absolute;z-index:0;top:5px;left:5px;width:calc(50% - 5px);height:calc(100% - 10px);border-radius:13px;background:var(--wine);box-shadow:0 5px 14px rgba(114,36,59,.28);transition:transform .22s ease}
+.toggle-track.food .toggle-thumb{transform:translateX(100%)}
+.toggle-option{position:relative;z-index:1;border:0;background:transparent;padding:14px 16px;border-radius:13px;font-weight:800;color:#686159;cursor:pointer;font-size:15px;transition:color .18s ease}
+.toggle-option.active{color:white}
+.toggle-option:not(.active):hover{color:var(--wine)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px;box-shadow:var(--shadow)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;color:var(--muted);margin-bottom:8px}
+select,input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:white;color:var(--ink);font-size:15px;outline:none}
+select:focus,input:focus{border-color:var(--gold);box-shadow:0 0 0 3px #c59a5520}
+.search-wrap{position:relative}
+.search-results{position:absolute;z-index:10;left:0;right:0;top:calc(100% + 5px);background:white;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(52,39,25,.12);overflow:hidden;display:none}
+.search-results.show{display:block}
+.search-result{width:100%;border:0;border-bottom:1px solid #f0ebe4;background:white;text-align:left;padding:11px 13px;cursor:pointer;color:var(--ink)}
+.search-result:last-child{border-bottom:0}
+.search-result:hover{background:#f7f1e9;color:var(--wine)}
+.field{margin-bottom:18px}.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:white;border-radius:999px;padding:8px 12px;cursor:pointer;color:#514b44}
+.chip.selected{background:#f2e5e8;border-color:#d5a4b2;color:var(--wine);font-weight:700}
+.cta{width:100%;border:0;border-radius:13px;padding:14px;background:var(--wine);color:white;font-weight:800;font-size:15px;cursor:pointer}
+.cta:hover{background:var(--wine2)}
+.result{margin-top:22px;background:linear-gradient(135deg,#fffdf9,#f5ede4);border:1px solid var(--line);border-radius:24px;padding:26px;display:none}
+.result.show{display:block}
+.result-top{display:flex;justify-content:space-between;gap:20px;align-items:start}
+.kicker{color:var(--wine);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:11px}
+.result h2{font-family:Georgia,serif;font-size:34px;font-weight:500;margin:5px 0}
+.score{font-size:28px;font-weight:800;color:var(--wine);white-space:nowrap}.score small{font-size:12px;color:var(--muted);font-weight:600}
+.reason{color:var(--muted);max-width:720px}
+.bars{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+.barbox{background:white;border:1px solid var(--line);border-radius:14px;padding:13px}.barbox span{font-size:11px;color:var(--muted)}.bar{height:7px;background:#eee7de;border-radius:9px;margin-top:8px;overflow:hidden}.fill{height:100%;background:var(--wine);border-radius:9px}
+.picks{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.pick{background:white;border:1px solid var(--line);border-radius:16px;padding:15px}.pick b{font-family:Georgia,serif;font-size:20px;font-weight:500}.pick .mini{font-size:12px;color:var(--muted);margin-top:3px}
+footer{text-align:center;color:#91897f;font-size:12px;margin-top:26px}
+@media(max-width:720px){.grid,.bars,.picks{grid-template-columns:1fr}.result-top{display:block}.score{margin-top:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="eyebrow">Vin · mad · Alsace</div>
+  <h1>Alsace Wine Matcher</h1>
+  <div class="subtitle">Find det perfekte match mellem Alsace-vin og mad – fra ost og skaldyr til kylling og tarte flambée.</div>
+</header>
+
+<div class="mode-toggle" role="group" aria-label="Vælg søgemåde">
+  <div class="toggle-track" id="modeToggle">
+    <div class="toggle-thumb" id="toggleThumb"></div>
+    <button id="wineMode" class="toggle-option active" onclick="setMode('wine')">🍇 Jeg har en vin</button>
+    <button id="foodMode" class="toggle-option" onclick="setMode('food')">🍽️ Jeg skal spise</button>
+  </div>
+</div>
+
+<div class="panel" id="formPanel"></div>
+<div class="result" id="result"></div>
+<footer>Matchene er vejledende. Tilberedning, sauce, sødme og den konkrete flaske kan ændre det bedste valg.</footer>
+</div>
+
+<script>
+const wines = {
+ Riesling:{style:"Frisk, tør og mineralsk", acid:95, body:45, aroma:72, foods:["Fisk & skaldyr","Choucroute","Sushi","Gedeost","Svinekød","Tarte flambée"],why:"Tør Riesling har typisk høj syre og citrus/mineralsk friskhed. Det skærer gennem fedme og fungerer godt med salt, fisk, skaldyr og syrlige garniturer.", tip:"Til choucroute er tør Riesling et klassisk valg. Til stærk chili kan en Riesling med lidt restsødme være bedre end en knastør udgave."},
+ "Gewurztraminer":{style:"Aromatisk, krydret og fyldig",acid:55,body:82,aroma:98,foods:["Krydret asiatisk","Munster","Foie gras","Thai","Curry","Dessert med frugt"],why:"Den intense duft og lave syre elsker krydderi, stærke aromaer og kraftige oste.",tip:"Gewurztraminer + Munster er en af Alsaces mest ikoniske kombinationer."},
+ "Pinot Gris":{style:"Fyldig, rund og let krydret",acid:65,body:88,aroma:78,foods:["Raclette","Svinekød","Svampe","Fjerkræ","Kalv","Fyldige saucer"],why:"Mere krop og moden frugt gør Pinot Gris velegnet til cremede, ristede og fyldige retter.",tip:"Til raclette er den fylde, du leder efter – men behold gerne lidt friskhed."},
+ "Pinot Blanc":{style:"Blød, frisk og alsidig",acid:72,body:58,aroma:55,foods:["Fisk","Kylling","Pasta","Salater","Quiche","Lette oste"],why:"Diskret aromatik og friskhed gør den til en af de mest fleksible Alsace-vine ved bordet.",tip:"Et sikkert valg, når retten er mild og du ikke vil have vinen til at overdøve maden."},
+ Sylvaner:{style:"Tør, frisk og urteagtig",acid:82,body:45,aroma:58,foods:["Asparges","Salater","Fisk","Skaldyr","Grønne grøntsager","Let frokost"],why:"Friskhed og urteagtige noter spiller flot sammen med grønne grøntsager og lette retter.",tip:"Sylvaner til asparges er et klassisk forårs-match."},
+ Muscat:{style:"Aromatisk, floral og frisk",acid:70,body:48,aroma:96,foods:["Asiatisk mad","Aperitif","Asparges","Friske salater","Melon","Let krydret"],why:"Den parfumerede, drueagtige karakter gør den spændende til aromatiske og let krydrede retter.",tip:"Server den godt afkølet som aperitif eller til grønne, aromatiske retter."},
+ "Pinot Noir":{style:"Rød, saftig og elegant",acid:72,body:62,aroma:78,foods:["And","Svampe","Kalv","Grillet fjerkræ","Charcuterie","Bløde oste"],why:"Den elegante røde frugt og moderate tannin fungerer godt med lyst kød og jordagtige smage.",tip:"Prøv den til and med svampe eller en god charcuterie-tallerken."},
+ "Crémant d’Alsace":{style:"Mousserende, frisk og sprød",acid:90,body:42,aroma:65,foods:["Aperitif","Østers","Friture","Skaldyr","Tapas","Cremede snacks"],why:"Bobler og syre renser ganen og gør Crémant ekstremt anvendelig før og under måltidet.",tip:"Friture + bobler er næsten altid en god idé."}
+};
+
+const foodMap = {
+ "Raclette": ["Pinot Gris","Riesling","Pinot Blanc"],
+ "Choucroute": ["Riesling","Sylvaner","Pinot Blanc"],
+ "Tarte flambée": ["Riesling","Pinot Blanc","Crémant d’Alsace"],
+ "Munster": ["Gewurztraminer","Pinot Gris","Riesling"],
+ "Foie gras": ["Pinot Gris","Gewurztraminer","Riesling"],
+ "Fisk & skaldyr": ["Riesling","Crémant d’Alsace","Pinot Blanc"],
+ "Østers": ["Crémant d’Alsace","Riesling","Sylvaner"],
+ "Asiatisk / Thai": ["Riesling","Gewurztraminer","Muscat"],
+ "Svampe": ["Pinot Noir","Pinot Gris","Riesling"],
+ "And": ["Pinot Noir","Pinot Gris","Riesling"],
+ "Asparges": ["Sylvaner","Pinot Blanc","Riesling"],
+ "Charcuterie": ["Pinot Noir","Crémant d’Alsace","Pinot Blanc"],
+ "Gedeost": ["Riesling","Sylvaner","Pinot Blanc"],
+ "Sushi": ["Riesling","Crémant d’Alsace","Pinot Blanc"],
+ "Kylling": ["Pinot Blanc","Pinot Gris","Riesling"],
+ "Svinekød": ["Riesling","Pinot Gris","Pinot Blanc"],
+ "Kalv": ["Pinot Gris","Pinot Noir","Riesling"],
+ "Curry": ["Riesling","Gewurztraminer","Pinot Gris"],
+ "Pasta": ["Pinot Blanc","Sylvaner","Pinot Gris"],
+ "Quiche": ["Pinot Blanc","Crémant d’Alsace","Riesling"],
+ "Grillet fisk": ["Riesling","Pinot Blanc","Crémant d’Alsace"],
+ "Grillet grønt": ["Sylvaner","Pinot Blanc","Muscat"],
+ "Frugtdessert": ["Gewurztraminer","Muscat","Pinot Gris"],
+ "Aperitif": ["Crémant d’Alsace","Muscat","Pinot Blanc"],
+ "Friture": ["Crémant d’Alsace","Riesling","Sylvaner"]
+};
+
+let mode="wine";
+function setMode(m){
+  mode=m;
+  document.getElementById("wineMode").classList.toggle("active",m==="wine");
+  document.getElementById("foodMode").classList.toggle("active",m==="food");
+  document.getElementById("modeToggle").classList.toggle("food",m==="food");
+  renderForm();
+}
+function renderForm(){
+ const p=document.getElementById("formPanel");
+ if(mode==="wine"){
+  p.innerHTML=`<div class="grid">
+   <div class="field"><label>Drue / vintype</label><select id="wine">${Object.keys(wines).map(x=>`<option>${x}</option>`).join("")}</select></div>
+   <div class="field"><label>Stil</label><select id="style"><option>Tør</option><option>Aromatisk</option><option>Fyldig</option><option>Mousserende</option></select></div>
+  </div>
+  <div class="field"><label>Hvad vil du spise?</label><div class="chips" id="foodChips">${[...new Set(Object.values(wines).flatMap(x=>x.foods))].slice(0,12).map(x=>`<button class="chip" onclick="toggleChip(this)">${x}</button>`).join("")}</div></div>
+  <button class="cta" onclick="matchWine()">Find madmatch →</button>`;
+ }else{
+  p.innerHTML=`<div class="field"><label>Hvad skal du spise?</label>
+    <div class="search-wrap">
+      <input id="custom" autocomplete="off" placeholder="Søg fx raclette, fisk, kylling, gedeost…" aria-label="Søg efter mad eller råvare">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+  </div>
+  <div class="field"><label>Eller vælg en klassiker</label><div class="chips" id="foodChips">${Object.keys(foodMap).slice(0,8).map(x=>`<button class="chip" onclick="chooseFood(this)">${x}</button>`).join("")}</div></div>
+  <button class="cta" onclick="matchFood()">Find min Alsace-vin →</button>`;
+  setupFoodSearch();
+ }
+}
+function toggleChip(el){el.classList.toggle("selected")}
+function showResult(title,score,why,tip,labels){
+ const r=document.getElementById("result");
+ r.innerHTML=`<div class="result-top"><div><div class="kicker">Dit match</div><h2>${title}</h2><div class="reason">${why}</div></div><div class="score">${score >= 90 ? "★★★★★" : score >= 78 ? "★★★★☆" : score >= 65 ? "★★★☆☆" : "★★☆☆☆"}<small>matchstyrke</small></div></div>
+ <div class="bars">${labels.map((x,i)=>`<div class="barbox"><span>${x[0]}</span><div class="bar"><div class="fill" style="width:${x[1]}%"></div></div></div>`).join("")}</div>
+ <strong>🍷 Alsace-tip</strong><p class="reason">${tip}</p>`;
+ r.classList.add("show");r.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+const foodAdvice = {
+ "Raclette": "Ostens fedme og de salte tilbehør kalder på en vin med fylde, men også friskhed. Pinot Gris er et godt bud; en frisk Riesling kan give en lettere kontrast.",
+ "Choucroute": "Kålens syre, saltet kød og ofte sennep passer klassisk til tør Riesling. Sylvaner er et mere diskret, friskt alternativ.",
+ "Tarte flambée": "Crème fraîche, løg og bacon giver både fedme og salt. Tør Riesling skærer igennem, mens Pinot Blanc er rundere og mere afdæmpet.",
+ "Munster": "Den intense, cremede ost har brug for en aromatisk vin med nok karakter. Gewurztraminer er den klassiske regionale kombination.",
+ "Foie gras": "Foie gras har rig fedme, så fylde og eventuel restsødme kan fungere godt. Pinot Gris med lidt restsødme er ofte et stærkt valg; Gewurztraminer kan også passe.",
+ "Fisk & skaldyr": "Frisk syre og afdæmpet fadpræg er ofte bedst til delikate fisk og skaldyr. Riesling, Crémant og Pinot Blanc er gode udgangspunkter.",
+ "Østers": "Salt, havfriskhed og delikat tekstur passer til en sprød vin med høj syre. Crémant d’Alsace eller tør Riesling er oplagte muligheder.",
+ "Asiatisk / Thai": "Krydderi, lime, urter og chili kræver omtanke. Riesling med lidt restsødme er ofte mere fleksibel end en helt tør vin; Gewurztraminer passer bedre til aromatiske retter uden alt for meget chili.",
+ "Svampe": "Svampenes jordede, umamirige smag kan passe til Pinot Noir, især ved stegte svampe. Pinot Gris er et alternativ til cremede svamperetter.",
+ "And": "Andens fedme og stegeskorpe kan bære en elegant Pinot Noir. Pinot Gris kan passe, hvis retten har frugt, krydderier eller en cremet sauce.",
+ "Asparges": "Asparges kan give vin en grøn eller bitter kant. Sylvaner og Pinot Blanc er gode, forsigtige valg; undgå meget tanninrig rødvin.",
+ "Charcuterie": "Salt, fedme og krydderier spænder bredt. Crémant renser ganen, mens Pinot Noir fungerer til mere kødprægede serveringer.",
+ "Gedeost": "Frisk syre matcher ostens syrlighed og cremede tekstur. Riesling, Sylvaner eller Pinot Blanc er gode bud afhængigt af ostens modenhed.",
+ "Sushi": "Riseddike, soja og rå fisk kræver friskhed og præcision. Tør Riesling eller Crémant er gode allroundvalg; undgå meget tanninrig vin.",
+ "Kylling": "Til mildt stegt eller pocheret kylling er Pinot Blanc et sikkert, afdæmpet valg. Pinot Gris passer bedre til stegeskorpe og cremet sauce.",
+ "Svinekød": "Tør Riesling passer især til svinekød med syrlige garniturer eller sennep. Pinot Gris er god til stegt eller cremet servering.",
+ "Kalv": "Kalv er mildt og fint i smagen. Pinot Gris eller Pinot Noir kan følge en mere fyldig tilberedning, mens Riesling passer til citron- eller urtesauce.",
+ "Curry": "Krydderistyrke og sødme i saucen betyder meget. Riesling med lidt restsødme er ofte et sikkert valg; Gewurztraminer kan passe til aromatiske, ikke alt for stærke curries.",
+ "Pasta": "Sauce bestemmer matchen: Pinot Blanc til lette fløde- eller grøntsagssaucer, Riesling til citron og skaldyr, Pinot Gris til svampe og mere fyldige saucer.",
+ "Quiche": "Æg og fløde giver fedme, så friskhed hjælper. Pinot Blanc eller Crémant fungerer godt, især til quiche med grøntsager eller bacon.",
+ "Grillet fisk": "Grillet fisk tåler lidt mere fylde end dampet fisk. Riesling eller Pinot Blanc passer til citron og urter; Pinot Gris kan fungere til en kraftigere sauce.",
+ "Grillet grønt": "Ristede grøntsager får sødme og let bitre noter. Sylvaner og Pinot Blanc er gode til urter og grønt; Muscat passer til aromatiske grøntsagsretter.",
+ "Frugtdessert": "Sødmen i vinen bør mindst matche sødmen i desserten. Aromatisk Gewurztraminer eller Muscat kan fungere, men vælg stil efter dessertens sødme.",
+ "Aperitif": "Crémant d’Alsace er et klassisk, alsidigt valg. Muscat giver et mere parfumeret udtryk, mens Pinot Blanc er mere diskret.",
+ "Friture": "Bobler og frisk syre hjælper med at rense ganen efter sprød, fed friture. Crémant d’Alsace er derfor et oplagt førstevalg."
+};
+const keywordRules = [
+ {re:/raclette|smeltet ost|ostefondue/, key:"Raclette"},
+ {re:/choucroute|surkål|sauerkraut/, key:"Choucroute"},
+ {re:/tarte flamb|flammkuchen/, key:"Tarte flambée"},
+ {re:/munster/, key:"Munster"},
+ {re:/foie gras|gåselever|andest[ée]g/, key:"Foie gras"},
+ {re:/østers|musling|reje|skaldyr|fisk|laks|torsk/, key:"Fisk & skaldyr"},
+ {re:/thai|asiatisk|chili|curry|karry|curry/, key:"Asiatisk / Thai"},
+ {re:/svamp/, key:"Svampe"},
+ {re:/and\b/, key:"And"},
+ {re:/asparges/, key:"Asparges"},
+ {re:/charcuterie|pølse|spegepølse|pålæg/, key:"Charcuterie"},
+ {re:/gedeost|chèvre/, key:"Gedeost"},
+ {re:/sushi|sashimi/, key:"Sushi"},
+ {re:/kylling/, key:"Kylling"},
+ {re:/svinekød|flæsk|bacon|svinekotelet/, key:"Svinekød"},
+ {re:/kalv|kalvekød/, key:"Kalv"},
+ {re:/pasta|spaghetti|lasagne|ravioli/, key:"Pasta"},
+ {re:/quiche|tærte/, key:"Quiche"},
+ {re:/grillet fisk|grillfisk/, key:"Grillet fisk"},
+ {re:/grillet grønt|grillede grøntsager/, key:"Grillet grønt"},
+ {re:/dessert|frugttærte|frugtsalat/, key:"Frugtdessert"},
+ {re:/aperitif/, key:"Aperitif"},
+ {re:/friture|fish and chips|tempura/, key:"Friture"}
+];
+function resolveFood(text){
+ const s=text.toLowerCase().trim();
+ const exact=Object.keys(foodMap).find(k=>k.toLowerCase()===s);
+ if(exact) return exact;
+ const rule=keywordRules.find(x=>x.re.test(s));
+ return rule ? rule.key : null;
+}
+function matchWine(){
+ const wineName=document.getElementById("wine").value;
+ const w=wines[wineName];
+ const selected=[...document.querySelectorAll("#foodChips .chip.selected")].map(x=>x.textContent);
+ let matches=selected.length ? selected.filter(x=>w.foods.includes(x)) : w.foods.slice(0,5);
+ let score=selected.length ? (matches.length ? 92 : 58) : 88;
+ let explanation=w.why;
+ let tip=w.tip;
+ if(selected.length){
+   explanation=matches.length
+    ? "Det er et godt match til " + matches.join(", ").toLowerCase() + ". " + w.why
+    : "Det er ikke blandt de mest oplagte kombinationer i vores guide. " + w.why;
+ } else {
+   const foodReasons = {
+    "Riesling": "Prøv især fisk og skaldyr, choucroute eller gedeost, hvor syren kan balancere salt og fedme.",
+    "Gewurztraminer": "Prøv især Munster eller aromatiske retter med krydderier. Ved stærk chili kan en vin med lidt restsødme være rarere.",
+    "Pinot Gris": "Prøv især raclette, svampe eller fjerkræ med en fyldig sauce.",
+    "Pinot Blanc": "Prøv især mild fisk, kylling eller quiche, hvor vinen ikke overdøver retten.",
+    "Sylvaner": "Prøv især asparges, grønne grøntsager eller lette fiskeretter.",
+    "Muscat": "Prøv især som aperitif eller til aromatiske grønne retter.",
+    "Pinot Noir": "Prøv især and, stegte svampe eller charcuterie.",
+    "Crémant d’Alsace": "Prøv især som aperitif, til østers eller til sprød friture."
+   };
+   explanation += " " + (foodReasons[wineName] || "");
+ }
+ showResult("Mad der passer til " + wineName,score,explanation,tip,[["Syre",w.acid],["Fylde",w.body],["Aromatik",w.aroma]]);
+ const r=document.getElementById("result");
+ r.innerHTML += `<div class="picks">${matches.slice(0,5).map((food,i)=>`<div class="pick"><div class="kicker">${i===0?"Start her":"Også godt"}</div><b>${food}</b><div class="mini">${foodAdvice[food] || "Et muligt match afhængigt af tilberedning og vinens stil."}</div></div>`).join("")}</div>`;
+}
+function chooseFood(el){
+ document.querySelectorAll("#foodChips .chip").forEach(x=>x.classList.remove("selected"));
+ el.classList.add("selected");
+ const input=document.getElementById("custom");
+ if(input) input.value=el.textContent;
+}
+function setupFoodSearch(){
+ const input=document.getElementById("custom"), box=document.getElementById("searchResults");
+ if(!input || !box) return;
+ const all=[...new Set([...Object.keys(foodMap), ...Object.values(wines).flatMap(x=>x.foods)])];
+ function update(){
+  const q=input.value.trim().toLowerCase();
+  if(!q){box.classList.remove("show");box.innerHTML="";return;}
+  const matches=all.filter(x=>x.toLowerCase().includes(q)).slice(0,7);
+  box.innerHTML=matches.length ? matches.map(x=>`<button class="search-result" onclick="pickSearchResult('${x.replace(/'/g,"\\\\'")}')">${x}</button>`).join("") :
+   `<div class="search-result" style="cursor:default;color:var(--muted)">Ingen direkte forslag – du kan stadig søge på din ret.</div>`;
+  box.classList.add("show");
+ }
+ input.addEventListener("input",update);
+ input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();box.classList.remove("show");matchFood();}});
+ input.addEventListener("focus",()=>{if(input.value) update();});
+ document.addEventListener("click",e=>{if(!e.target.closest(".search-wrap")) box.classList.remove("show");});
+}
+function pickSearchResult(value){
+ const input=document.getElementById("custom");
+ input.value=value;
+ document.getElementById("searchResults").classList.remove("show");
+ input.focus();
+}
+function matchFood(){
+ const raw=document.getElementById("custom")?.value.trim() || "";
+ const selected=document.querySelector("#foodChips .chip.selected")?.textContent || "";
+ const query=raw || selected;
+ const key=resolveFood(query);
+ let picks, explanation, score=86;
+ if(key && foodMap[key]){
+  picks=foodMap[key];
+  explanation=foodAdvice[key] || "Matchene er vejledende; tilberedning, sauce og vinens konkrete stil kan ændre rangeringen.";
+ } else {
+  const s=query.toLowerCase();
+  if(/ost|brie|camembert/.test(s)) {picks=["Gewurztraminer","Pinot Gris","Riesling"];explanation="Til cremede eller kraftige oste kan aromatisk Gewurztraminer eller fyldig Pinot Gris fungere. Ostetype og modenhed betyder meget.";}
+  else if(/fisk|reje|østers|skaldyr|laks|torsk/.test(s)) {picks=foodMap["Fisk & skaldyr"];explanation=foodAdvice["Fisk & skaldyr"];}
+  else if(/svin|flæsk|bacon/.test(s)) {picks=foodMap["Svinekød"];explanation=foodAdvice["Svinekød"];}
+  else if(/kylling|fjerkræ/.test(s)) {picks=foodMap["Kylling"];explanation=foodAdvice["Kylling"];}
+  else if(/svamp/.test(s)) {picks=foodMap["Svampe"];explanation=foodAdvice["Svampe"];}
+  else if(/pizza|tomat/.test(s)) {picks=["Pinot Noir","Crémant d’Alsace","Pinot Blanc"];explanation="Tomatens syre og toppings betyder meget. Pinot Noir kan passe til svampe eller charcuteri på pizza; Crémant er et friskt alternativ. Dette er et mere usikkert match uden flere detaljer." ;score=68;}
+  else {picks=["Riesling","Pinot Blanc","Crémant d’Alsace"];explanation="Jeg har ikke et specifikt match for denne ret i guiden endnu. Riesling, Pinot Blanc og Crémant er alsidige startpunkter, men sauce, krydring og tilberedning kan ændre anbefalingen.";score=60;}
+ }
+ const best=picks[0], w=wines[best];
+ showResult(best+" · bedste bud",score,explanation,w.tip,[["Syre",w.acid],["Fylde",w.body],["Aromatik",w.aroma]]);
+ const r=document.getElementById("result");
+ r.innerHTML += `<div class="picks">${picks.slice(0,3).map((x,i)=>`<div class="pick"><div class="kicker">${i===0?"1 · Bedste bud":i+1+" · Alternativ"}</div><b>${x}</b><div class="mini">${wines[x].style}</div></div>`).join("")}</div>`;
+}
+
+renderForm();
+</script>
+</body>
+</html>
